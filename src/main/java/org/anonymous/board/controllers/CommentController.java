@@ -1,13 +1,22 @@
 package org.anonymous.board.controllers;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.anonymous.board.validators.CommentValidator;
+import org.anonymous.global.exceptions.BadRequestException;
+import org.anonymous.global.libs.Utils;
 import org.anonymous.global.rests.JSONData;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/comment")
 public class CommentController {
+
+    private final CommentValidator validator;
+
+    private final Utils utils;
 
     /**
      * 댓글
@@ -16,7 +25,14 @@ public class CommentController {
      * @return
      */
     @PostMapping("/save")
-    public JSONData save() {
+    public JSONData save(@RequestBody @Valid RequestComment form, Errors errors) {
+
+        validator.validate(form, errors);
+
+        if (errors.hasErrors()) {
+
+            throw new BadRequestException(utils.getErrorMessages(errors));
+        }
 
         return new JSONData();
     }
