@@ -2,6 +2,12 @@ package org.anonymous.board.validators;
 
 import lombok.RequiredArgsConstructor;
 import org.anonymous.board.controllers.RequestBoard;
+import org.anonymous.board.entities.BoardData;
+import org.anonymous.board.entities.QCommentData;
+import org.anonymous.board.repositories.BoardDataRepository;
+import org.anonymous.board.repositories.CommentDataRepository;
+import org.anonymous.global.exceptions.BadRequestException;
+import org.anonymous.global.libs.Utils;
 import org.anonymous.global.validators.PasswordValidator;
 import org.anonymous.member.MemberUtil;
 import org.springframework.context.annotation.Lazy;
@@ -17,9 +23,15 @@ import org.springframework.validation.Validator;
 @RequiredArgsConstructor
 public class BoardValidator implements Validator, PasswordValidator {
 
+    private final Utils utils;
+
     private final MemberUtil memberUtil;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final BoardDataRepository boardDataRepository;
+
+    private final CommentDataRepository commentDataRepository;
 
     @Override
     public boolean supports(Class<?> clazz) {
@@ -62,13 +74,29 @@ public class BoardValidator implements Validator, PasswordValidator {
      *
      * @param password
      * @param seq
-     * @return
      */
     public boolean checkGuestPassword(String password, Long seq) {
-
         if (seq == null) return false;
 
+        BoardData item = boardDataRepository.findById(seq).orElse(null);
+
+        if (item != null && StringUtils.hasText(item.getGuestPw())) {
+            return passwordEncoder.matches(password, item.getGuestPw());
+        }
 
         return false;
+    }
+
+    /**
+     * 게시글 삭제 가능 여부 체크
+     *  - 댓글이 존재하면 삭제 불가
+     * @param seq
+     */
+    public void checkDelete(Long seq) {
+        QCommentData commentData = QCommentData.commentData;
+
+        if (commentDataRepository.count(commentData.data.seq.eq(seq)) > 0L) {
+            throw new BadRequestException(utils.getMessage("Exist.comment"));
+        }
     }
 }
