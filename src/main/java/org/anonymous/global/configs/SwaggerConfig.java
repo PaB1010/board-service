@@ -14,14 +14,14 @@ import org.springframework.context.annotation.Configuration;
  */
 // 제목 & 설명
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "파일 API", description = "파일 API 제공"))
+@OpenAPIDefinition(info = @Info(title = "게시판 API", description = "게시판 API 제공"))
 public class SwaggerConfig {
 
     @Bean
     public GroupedOpenApi openApiGroup() {
 
         return GroupedOpenApi.builder()
-                .group("파일 API v1") // Group 이름 -> group("설명")
+                .group("게시판 API v1") // Group 이름 -> group("설명")
                 .pathsToMatch("/**") // 경로 패턴 지정 (api 문서에 속하는 모든 경로)
                 .build();
     }

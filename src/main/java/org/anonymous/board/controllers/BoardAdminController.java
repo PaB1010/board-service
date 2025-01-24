@@ -2,9 +2,14 @@ package org.anonymous.board.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.anonymous.board.entities.Board;
+import org.anonymous.board.services.configs.BoardConfigDeleteService;
+import org.anonymous.board.services.configs.BoardConfigInfoService;
+import org.anonymous.board.services.configs.BoardConfigUpdateService;
 import org.anonymous.board.validators.BoardConfigValidator;
 import org.anonymous.global.exceptions.BadRequestException;
 import org.anonymous.global.libs.Utils;
+import org.anonymous.global.paging.ListData;
 import org.anonymous.global.rests.JSONData;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +23,13 @@ public class BoardAdminController {
 
     private final Utils utils;
 
+    private final BoardConfigInfoService infoService;
+
     private final BoardConfigValidator configValidator;
+
+    private final BoardConfigUpdateService updateService;
+
+    private final BoardConfigDeleteService deleteService;
 
     /**
      * 게시판 설정
@@ -36,7 +47,9 @@ public class BoardAdminController {
             throw new BadRequestException(utils.getErrorMessages(erros));
         }
 
-        return new JSONData();
+        Board board = updateService.process(form);
+
+        return new JSONData(board);
     }
 
     /**
@@ -48,7 +61,9 @@ public class BoardAdminController {
     @GetMapping("/config")
     public JSONData list(@ModelAttribute BoardConfigSearch search) {
 
-        return new JSONData();
+        ListData<Board> items = infoService.getList(search);
+
+        return new JSONData(items);
     }
 
     /**
@@ -61,7 +76,9 @@ public class BoardAdminController {
     @PatchMapping("/config")
     public JSONData update(@RequestBody List<RequestConfig> form) {
 
-        return new JSONData();
+        List<Board> items = updateService.process(form);
+
+        return new JSONData(items);
     }
 
     /**
@@ -75,6 +92,8 @@ public class BoardAdminController {
     @DeleteMapping("/config")
     public JSONData delete(@RequestParam("bid") List<String> bids) {
 
-        return new JSONData();
+        List<Board> items = deleteService.process(bids);
+
+        return new JSONData(items);
     }
 }

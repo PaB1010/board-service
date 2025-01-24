@@ -2,21 +2,40 @@ package org.anonymous.board.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.anonymous.board.entities.CommentData;
+import org.anonymous.board.services.BoardAuthService;
+import org.anonymous.board.services.comment.CommentDeleteService;
+import org.anonymous.board.services.comment.CommentInfoService;
+import org.anonymous.board.services.comment.CommentUpdateService;
 import org.anonymous.board.validators.CommentValidator;
 import org.anonymous.global.exceptions.BadRequestException;
 import org.anonymous.global.libs.Utils;
 import org.anonymous.global.rests.JSONData;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/comment")
 public class CommentController {
 
-    private final CommentValidator validator;
-
     private final Utils utils;
+
+    private final BoardAuthService authService;
+
+    private final CommentInfoService infoService;
+
+    private final CommentValidator commentValidator;
+
+    private final CommentDeleteService deleteService;
+
+    private final CommentUpdateService updateService;
+
 
     /**
      * 댓글
@@ -27,14 +46,26 @@ public class CommentController {
     @PostMapping("/save")
     public JSONData save(@RequestBody @Valid RequestComment form, Errors errors) {
 
-        validator.validate(form, errors);
+        String mode = form.getMode();
+
+        mode = StringUtils.hasText(mode) ? mode : "write";
+
+        if (mode.equals("edit")) {
+
+            // 수정 권한 여부 체크
+            commonProcess(form.getSeq());
+        }
+
+        commentValidator.validate(form, errors);
 
         if (errors.hasErrors()) {
 
             throw new BadRequestException(utils.getErrorMessages(errors));
         }
 
-        return new JSONData();
+        CommentData data = updateService.save(form);
+
+        return new JSONData(data);
     }
 
     /**
@@ -48,7 +79,11 @@ public class CommentController {
     @GetMapping("/view/{seq}")
     public JSONData view(@PathVariable("seq") Long seq) {
 
-        return new JSONData();
+        commonProcess(seq);
+
+        CommentData item = infoService.get(seq);
+
+        return new JSONData(item);
     }
 
     /**
@@ -61,7 +96,9 @@ public class CommentController {
     @GetMapping("/list/{seq}")
     public JSONData list(@PathVariable("seq") Long seq) {
 
-        return new JSONData();
+        List<CommentData> items = infoService.getList(seq);
+
+        return new JSONData(items);
     }
 
     /**
@@ -74,6 +111,43 @@ public class CommentController {
     @DeleteMapping("/{seq}")
     public JSONData delete(@PathVariable("seq") Long seq) {
 
-        return new JSONData();
+        commonProcess(seq);
+
+        CommentData item = deleteService.delete(seq);
+
+        return new JSONData(item);
+    }
+
+    /**
+     * 비회원 비밀번호 검증
+     *
+     * 응답 코드 204 : 검증 성공
+     * 응답 코드 401 : 검증 실패
+     *
+     * @param seq : 댓글 번호
+     * @param password
+     */
+    @PostMapping("/password/{seq}")
+    public ResponseEntity<Void> validateGuestPassword(@PathVariable("seq") Long seq, @RequestParam(name = "password", required = false) String password) {
+
+        if (!StringUtils.hasText(password)) {
+
+            throw new BadRequestException(utils.getMessage("NotBlank.password"));
+        }
+
+        HttpStatus status = commentValidator.checkGuestPassword(password, seq) ? HttpStatus.NO_CONTENT : HttpStatus.UNAUTHORIZED;
+
+        return ResponseEntity.status(status).build();
+    }
+
+    /**
+     * 공통 처리
+     *
+     * @param seq
+     */
+    private void commonProcess(Long seq) {
+
+        // 댓글 권한 체크
+        authService.check("comment", seq);
     }
 }
