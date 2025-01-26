@@ -17,7 +17,7 @@ import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity // 기본 보안 정책 활성화 - 비정상적인 요청시 밴 등등
-@EnableMethodSecurity // @PreAuthorize, @PrePostEnabled 호라성화, 특정 처리 메서드 단위에서 권한 정책 설정
+@EnableMethodSecurity // @PreAuthorize, @PrePostEnabled 활성화, 특정 처리 메서드 단위에서 권한 정책 설정
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -56,14 +56,14 @@ public class SecurityConfig {
 
                        // throw new UnAuthorizedException();
                         res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    });
 
-                    // 로그인 후 권한이 없는 경우
-                    c.accessDeniedHandler((req, res, e) -> {
+                    }); // 로그인 후 권한이 없는 경우
+
+                    // c.accessDeniedHandler((req, res, e) -> {
 
                       // throw new UnAuthorizedException();
-                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    });
+                        // res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    // });
                 })
                 // 미로그인시 접근 가능한 패턴
                 .authorizeHttpRequests( c -> {

@@ -123,7 +123,7 @@ public class BoardAuthService {
                 if (utils.getValue(utils.getUserHash() + "_board_" + seq) == null) {
 
                     utils.saveValue(utils.getUserHash() + "_seq", seq);
-                    
+
                     throw new GuestPasswordCheckException();
                 }
 
